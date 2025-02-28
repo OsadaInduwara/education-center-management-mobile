@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "341836389159",
+    "project_id": "institute-management-d6241",
+    "storage_bucket": "institute-management-d6241.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:341836389159:android:ea7f06fc791445ad1a6702",
+        "android_client_info": {
+          "package_name": "com.example.student_book"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCNLHS1S7dChadw9890ow8QONrMvFZHkzI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
