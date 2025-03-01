@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:provider/provider.dart';
 import 'package:student_book/screens/attendance_screen.dart';
+import 'package:student_book/screens/class_detail_screen.dart';
 import 'package:student_book/screens/manage_grades_screens.dart';
 import 'package:student_book/screens/profile_screen.dart';
 import 'package:student_book/screens/register_student_screen.dart';
@@ -52,6 +53,11 @@ class MyApp extends StatelessWidget {
           '/attendance': (context) => const MarkAttendanceScreen(),
           '/profile': (context) => const ProfileScreen(),
           '/managegrade': (context) => const ManageGradesScreen(),
+          '/classdetail': (context) {
+            final args = ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>;
+            return ClassDetailScreen(classData: args);
+          }
+
 
         },
       ),

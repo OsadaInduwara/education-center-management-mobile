@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../user_provider.dart';
+import '../theme/app_colors.dart'; // Import the color file
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({Key? key}) : super(key: key);
@@ -20,37 +21,111 @@ class _LoginScreenState extends State<LoginScreen> {
     final isLoading = userProvider.isLoading;
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Login - My Institute App'),
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            children: [
-              TextFormField(
-                controller: _emailController,
-                decoration: const InputDecoration(labelText: 'Email'),
-                validator: (val) =>
-                val == null || val.isEmpty ? 'Enter your email' : null,
+      backgroundColor: AppColors.background, // Dark background
+      body: SafeArea(
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            return SingleChildScrollView(
+              padding: EdgeInsets.only(
+                left: 24,
+                right: 24,
+                top: 40,
+                bottom: MediaQuery.of(context).viewInsets.bottom + 20,
               ),
-              TextFormField(
-                controller: _passwordController,
-                decoration: const InputDecoration(labelText: 'Password'),
-                obscureText: true,
-                validator: (val) =>
-                val == null || val.isEmpty ? 'Enter your password' : null,
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Card(
+                    elevation: 8,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    color: AppColors.cardColor, // Dark card
+                    child: Padding(
+                      padding: const EdgeInsets.all(24.0),
+                      child: Form(
+                        key: _formKey,
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              'Welcome Back!',
+                              style: TextStyle(
+                                fontSize: 24,
+                                fontWeight: FontWeight.bold,
+                                color: AppColors.secondary, // Rich purple accent
+                              ),
+                            ),
+                            const SizedBox(height: 16),
+                            TextFormField(
+                              controller: _emailController,
+                              style: const TextStyle(color: AppColors.textPrimary),
+                              decoration: InputDecoration(
+                                labelText: 'Email',
+                                labelStyle: const TextStyle(color: AppColors.secondary),
+                                prefixIcon: const Icon(Icons.email, color: AppColors.secondary),
+                                filled: true,
+                                fillColor: AppColors.cardColor,
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: BorderSide.none,
+                                ),
+                              ),
+                              validator: (val) =>
+                              val == null || val.isEmpty ? 'Enter your email' : null,
+                            ),
+                            const SizedBox(height: 12),
+                            TextFormField(
+                              controller: _passwordController,
+                              obscureText: true,
+                              style: const TextStyle(color: AppColors.textPrimary),
+                              decoration: InputDecoration(
+                                labelText: 'Password',
+                                labelStyle: const TextStyle(color: AppColors.secondary),
+                                prefixIcon: const Icon(Icons.lock, color: AppColors.secondary),
+                                filled: true,
+                                fillColor: AppColors.cardColor,
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: BorderSide.none,
+                                ),
+                              ),
+                              validator: (val) =>
+                              val == null || val.isEmpty ? 'Enter your password' : null,
+                            ),
+                            const SizedBox(height: 20),
+                            isLoading
+                                ? const CircularProgressIndicator(
+                              valueColor: AlwaysStoppedAnimation<Color>(AppColors.secondary),
+                            )
+                                : ElevatedButton(
+                              onPressed: _handleLogin,
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: AppColors.primary, // Vibrant red
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 40, vertical: 14),
+                              ),
+                              child: const Text(
+                                'Login',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
               ),
-              const SizedBox(height: 16),
-              isLoading
-                  ? const CircularProgressIndicator()
-                  : ElevatedButton(
-                onPressed: _handleLogin,
-                child: const Text('Login'),
-              ),
-            ],
-          ),
+            );
+          },
         ),
       ),
     );
@@ -64,12 +139,13 @@ class _LoginScreenState extends State<LoginScreen> {
           _emailController.text.trim(),
           _passwordController.text.trim(),
         );
-        // If successful, userProvider automatically fetches user doc
         Navigator.pushReplacementNamed(context, '/home');
       } catch (e) {
-        // Show error message, e.g., invalid credentials
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: $e')),
+          SnackBar(
+            content: Text('Error: $e'),
+            backgroundColor: AppColors.error, // Bright red for errors
+          ),
         );
       }
     }

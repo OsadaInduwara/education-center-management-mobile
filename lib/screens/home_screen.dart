@@ -1,8 +1,10 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:provider/provider.dart';
 import '../user_provider.dart';
 import 'grade_detail_screen.dart';
+import '../theme/app_colors.dart'; // Updated color file
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({Key? key}) : super(key: key);
@@ -23,13 +25,11 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Future<void> _fetchGrades() async {
     setState(() => _isFetchingData = true);
-
     final gradeSnaps = await FirebaseFirestore.instance.collection('grades').get();
     final grades = gradeSnaps.docs.map((doc) => {
       'docId': doc.id,
       'gradeName': doc['gradeName'] ?? 'Unnamed Grade',
     }).toList();
-
     setState(() {
       _grades = grades;
       _isFetchingData = false;
@@ -41,6 +41,7 @@ class _HomeScreenState extends State<HomeScreen> {
     final userProvider = Provider.of<UserProvider>(context);
     final isLoadingUser = userProvider.isLoading;
     final role = userProvider.role;
+    final userName = userProvider.currentUser?.name ?? 'User';
 
     if (userProvider.currentUser == null && !isLoadingUser) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -49,24 +50,98 @@ class _HomeScreenState extends State<HomeScreen> {
     }
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text("Education Center", style: TextStyle(color: Colors.white)),
-        backgroundColor: Colors.deepPurple,
-        centerTitle: true,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.person),
-            onPressed: () {
-              Navigator.pushNamed(context, '/profile');
-            },
+      backgroundColor: AppColors.background,
+      appBar: PreferredSize(
+        preferredSize: const Size.fromHeight(150),
+        child: AppBar(
+          automaticallyImplyLeading: false,
+          flexibleSpace: Stack(
+            children: [
+              // 1) Background image
+              Container(
+                decoration: const BoxDecoration(
+                  image: DecorationImage(
+                    image: AssetImage('assets/appbar_bg.jpg'), // Your image path
+                    fit: BoxFit.cover,
+                  ),
+                ),
+              ),
+              // 2) Gradient overlay (optional for better text/icon contrast)
+              Container(
+
+                decoration:  BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      AppColors.appBarStart.withOpacity(0.5),
+                      AppColors.appBarEnd.withOpacity(0.7),
+                    ],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    stops: [0.0, 1.0],
+                  ),
+                ),
+
+
+              ),
+              // 3) The content (row with avatar, name, icons) pinned to the bottom
+              Column(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 10),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Row(
+                          children: [
+                            const CircleAvatar(
+                              radius: 30,
+                              backgroundImage: AssetImage('assets/profile_placeholder.jpg'),
+                            ),
+                            const SizedBox(width: 12),
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Text(
+                                  'Welcome,',
+                                  style: TextStyle(fontSize: 14, color: AppColors.appBarText),
+                                ),
+                                Text(
+                                  userName,
+                                  style: const TextStyle(
+                                    fontSize: 20,
+                                    fontWeight: FontWeight.bold,
+                                    color: AppColors.appBarText,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                        Row(
+                          children: [
+                            IconButton(
+                              icon: const Icon(Icons.person, color: AppColors.appBarIcon),
+                              onPressed: () {
+                                Navigator.pushNamed(context, '/profile');
+                              },
+                            ),
+                            IconButton(
+                              icon: const Icon(Icons.logout, color: AppColors.appBarIcon),
+                              onPressed: () async {
+                                await userProvider.signOut();
+                              },
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ],
           ),
-          IconButton(
-            icon: const Icon(Icons.logout),
-            onPressed: () async {
-              await userProvider.signOut();
-            },
-          ),
-        ],
+        ),
       ),
       body: _isFetchingData
           ? const Center(child: CircularProgressIndicator())
@@ -82,14 +157,17 @@ class _HomeScreenState extends State<HomeScreen> {
             padding: const EdgeInsets.all(16.0),
             child: ElevatedButton(
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.purple,
+                backgroundColor: AppColors.primary,
                 padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
               ),
               onPressed: () {
                 Navigator.pushNamed(context, '/managerPanel');
               },
-              child: const Text('Go to Manager Control Panel', style: TextStyle(color: Colors.white, fontSize: 16)),
+              child: const Text(
+                'Go to Manager Control Panel',
+                style: TextStyle(color: Colors.white, fontSize: 16),
+              ),
             ),
           ),
         const SizedBox(height: 10),
@@ -100,30 +178,30 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _buildGradeList() {
     return _grades.isEmpty
-        ? const Center(child: Text('No grades found.', style: TextStyle(fontSize: 18)))
+        ? const Center(child: Text('No grades found.', style: TextStyle(fontSize: 18, color: AppColors.textPrimary)))
         : ListView.builder(
       padding: const EdgeInsets.symmetric(horizontal: 16),
       itemCount: _grades.length,
       itemBuilder: (context, index) {
         final grade = _grades[index];
         return Card(
-          color: Colors.purple.shade100,
+          color: AppColors.cardColor,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
           margin: const EdgeInsets.symmetric(vertical: 8),
-          elevation: 4,
+          elevation: 10,
           child: ListTile(
             contentPadding: const EdgeInsets.all(16),
             leading: Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: Colors.purple.shade200,
+                color: AppColors.primary,
               ),
-              child: const Icon(Icons.school, color: Colors.white),
+              child: const Icon(Icons.menu_book_sharp, color: Colors.white),
             ),
             title: Text(
               grade['gradeName'],
-              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
             ),
             trailing: const Icon(Icons.arrow_forward_ios, color: Colors.white),
             onTap: () {
@@ -142,4 +220,8 @@ class _HomeScreenState extends State<HomeScreen> {
       },
     );
   }
+}
+
+extension on User? {
+  get name => null;
 }
