@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import '../theme/app_colors.dart';
+import '../../theme/app_colors.dart';
 
 class ClassDetailScreen extends StatefulWidget {
   // Requires classData to be passed.

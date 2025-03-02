@@ -1,19 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:provider/provider.dart';
-import 'package:student_book/screens/attendance_screen.dart';
-import 'package:student_book/screens/class_detail_screen.dart';
-import 'package:student_book/screens/manage_grades_screens.dart';
-import 'package:student_book/screens/profile_screen.dart';
-import 'package:student_book/screens/register_student_screen.dart';
-import 'package:student_book/screens/register_teacher_screen.dart';
-import 'package:student_book/user_provider.dart';
-import 'class_provider.dart';
+import 'package:student_book/providers/class_provider.dart';
+import 'package:student_book/screens/main/class_detail_screen.dart';
+import 'package:student_book/screens/main/home_screen.dart';
+import 'package:student_book/screens/main/manager_control_panel.dart';
+import 'package:student_book/screens/manager/attendance_screen.dart';
+import 'package:student_book/screens/main/profile_screen.dart';
+import 'package:student_book/screens/manager/class_management_screen.dart';
+import 'package:student_book/screens/manager/manage_grades_screens.dart';
+import 'package:student_book/screens/manager/register_student_screen.dart';
+import 'package:student_book/screens/manager/register_teacher_screen.dart';
+import 'package:student_book/providers/user_provider.dart';
 import 'firebase_options.dart';
-import 'screens/login_screen.dart';
-import 'screens/home_screen.dart';
-import 'screens/manager_control_panel.dart';
-import 'screens/class_management_screen.dart'; // so we can route to ClassManagement
+import 'screens/auth/login_screen.dart';
 
 
 void main() async {

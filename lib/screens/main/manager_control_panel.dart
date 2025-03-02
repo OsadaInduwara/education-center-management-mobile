@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../theme/app_colors.dart';
+import '../../theme/app_colors.dart';
 
 class ManagerControlPanel extends StatelessWidget {
   const ManagerControlPanel({Key? key}) : super(key: key);

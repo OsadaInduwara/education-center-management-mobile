@@ -2,9 +2,9 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:provider/provider.dart';
-import '../user_provider.dart';
+import '../../theme/app_colors.dart';
+import '../../providers/user_provider.dart';
 import 'grade_detail_screen.dart';
-import '../theme/app_colors.dart'; // Updated color file
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({Key? key}) : super(key: key);

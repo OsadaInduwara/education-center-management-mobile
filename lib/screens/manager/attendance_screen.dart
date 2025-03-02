@@ -1,9 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:provider/provider.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import '../class_provider.dart'; // This provider returns each class with 'id'
 
 class MarkAttendanceScreen extends StatefulWidget {
   const MarkAttendanceScreen({Key? key}) : super(key: key);
@@ -125,8 +123,6 @@ class _MarkAttendanceScreenState extends State<MarkAttendanceScreen> {
 
   /// Build the grade dropdown.
   Widget _buildGradeDropdown() {
-    // For simplicity, we fetch grades directly here.
-    // In production you might want to use a provider.
     return FutureBuilder<QuerySnapshot>(
       future: FirebaseFirestore.instance.collection('grades').get(),
       builder: (context, snapshot) {
@@ -158,44 +154,56 @@ class _MarkAttendanceScreenState extends State<MarkAttendanceScreen> {
 
   /// Build the class dropdown, filtered by selected grade.
   Widget _buildClassDropdown() {
-    final classProvider = Provider.of<ClassProvider>(context);
-    final classes = classProvider.classes; // Each map includes 'id', 'className', and 'gradeId'.
-    // Filter classes by selected grade.
-    final filteredClasses = _selectedGradeId != null
-        ? classes.where((c) => c['gradeId'] == _selectedGradeId).toList()
-        : [];
-    final List<DropdownMenuItem<String>> dropdownItems = [];
-    final Set<String> seenIds = {};
-    for (var classData in filteredClasses) {
-      final classId = classData['id'];
-      if (classId != null && !seenIds.contains(classId)) {
-        seenIds.add(classId);
-        final className = classData['className'] ?? "Unnamed Class";
-        dropdownItems.add(
-          DropdownMenuItem<String>(
-            value: classId,
-            child: Text(className),
-          ),
-        );
-      }
-    }
-    final String? dropdownValue =
-    (_selectedClassId != null && seenIds.contains(_selectedClassId))
-        ? _selectedClassId
-        : null;
-    return DropdownButtonFormField<String>(
-      value: dropdownValue,
-      hint: const Text("Select a Class"),
-      items: dropdownItems,
-      onChanged: (val) {
-        setState(() {
-          _selectedClassId = val;
-        });
-        if (val != null) {
-          _fetchStudentsForClass(val);
+    return FutureBuilder<QuerySnapshot>(
+      future: FirebaseFirestore.instance.collection('classes').get(),
+      builder: (context, snapshot) {
+        if (!snapshot.hasData) return const CircularProgressIndicator();
+        final classDocs = snapshot.data!.docs;
+        // Map class docs into a list.
+        final classes = classDocs.map((doc) {
+          final data = doc.data() as Map<String, dynamic>;
+          data['id'] = doc.id; // add document id
+          return data;
+        }).toList();
+
+        // Filter classes by selected grade.
+        final filteredClasses = _selectedGradeId != null
+            ? classes.where((c) => c['gradeId'] == _selectedGradeId).toList()
+            : [];
+        final List<DropdownMenuItem<String>> dropdownItems = [];
+        final Set<String> seenIds = {};
+        for (var classData in filteredClasses) {
+          final classId = classData['id'];
+          if (classId != null && !seenIds.contains(classId)) {
+            seenIds.add(classId);
+            final className = classData['className'] ?? "Unnamed Class";
+            dropdownItems.add(
+              DropdownMenuItem<String>(
+                value: classId,
+                child: Text(className),
+              ),
+            );
+          }
         }
+        final String? dropdownValue =
+        (_selectedClassId != null && seenIds.contains(_selectedClassId))
+            ? _selectedClassId
+            : null;
+        return DropdownButtonFormField<String>(
+          value: dropdownValue,
+          hint: const Text("Select a Class"),
+          items: dropdownItems,
+          onChanged: (val) {
+            setState(() {
+              _selectedClassId = val;
+            });
+            if (val != null) {
+              _fetchStudentsForClass(val);
+            }
+          },
+          validator: (val) => val == null ? 'Please select a class' : null,
+        );
       },
-      validator: (val) => val == null ? 'Please select a class' : null,
     );
   }
 

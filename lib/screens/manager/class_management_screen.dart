@@ -1,9 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:provider/provider.dart';
-
-import '../class_provider.dart'; // if needed
-import '../user_provider.dart';  // if needed
 
 class ClassManagementScreen extends StatefulWidget {
   const ClassManagementScreen({Key? key}) : super(key: key);
@@ -44,7 +40,7 @@ class _ClassManagementScreenState extends State<ClassManagementScreen> {
     final classes = classSnaps.docs.map((doc) {
       final data = doc.data();
       return {
-        'docId': doc.id,
+        'classId': doc.id,
         'className': data['className'] ?? '',
         'gradeId': data['gradeId'], // must be saved when class is created.
       };
@@ -84,7 +80,7 @@ class _ClassManagementScreenState extends State<ClassManagementScreen> {
     final gradeSnaps = await FirebaseFirestore.instance.collection('grades').get();
     final grades = gradeSnaps.docs.map((doc) {
       return {
-        'docId': doc.id,
+        'gradeId': doc.id,
         'gradeName': doc['gradeName'] ?? 'Unnamed Grade',
       };
     }).toList();
@@ -140,7 +136,7 @@ class _ClassManagementScreenState extends State<ClassManagementScreen> {
           hint: const Text('Select a Grade'),
           items: _grades.map((grade) {
             return DropdownMenuItem(
-              value: grade['docId'] as String,
+              value: grade['gradeId'] as String,
               child: Text(grade['gradeName']),
             );
           }).toList(),
@@ -197,7 +193,7 @@ class _ClassManagementScreenState extends State<ClassManagementScreen> {
           hint: const Text('Select Grade for Assignment'),
           items: _grades.map((grade) {
             return DropdownMenuItem(
-              value: grade['docId'] as String,
+              value: grade['gradeId'] as String,
               child: Text(grade['gradeName']),
             );
           }).toList(),
@@ -215,7 +211,7 @@ class _ClassManagementScreenState extends State<ClassManagementScreen> {
             // Filter classes that have a matching gradeId.
             return classMap['gradeId'] == _selectedGradeId;
           }).map((classMap) {
-            final classId = classMap['docId'] as String;
+            final classId = classMap['classId'] as String;
             final className = classMap['className'];
             return DropdownMenuItem(
               value: classId,
@@ -300,6 +296,8 @@ class _ClassManagementScreenState extends State<ClassManagementScreen> {
           'gradeId': _selectedGradeId, // saving grade id
           'createdAt': FieldValue.serverTimestamp(),
         });
+        await docRef.update({'classId': docRef.id});
+
 
         _classNameController.clear();
 
@@ -336,6 +334,9 @@ class _ClassManagementScreenState extends State<ClassManagementScreen> {
         'classIds': FieldValue.arrayUnion([_selectedClassId]),
         'gradeId': _selectedGradeId, // save grade details
       }, SetOptions(merge: true));
+
+      await enrolDoc.update({'userId': enrolDoc.id});
+
 
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Student assigned to class.')),

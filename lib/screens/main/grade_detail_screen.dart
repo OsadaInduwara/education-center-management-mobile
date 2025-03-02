@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import '../theme/app_colors.dart';
+
+import '../../theme/app_colors.dart';
 
 class GradeDetailScreen extends StatefulWidget {
   final String gradeId;

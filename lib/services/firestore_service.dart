@@ -16,20 +16,4 @@ class FirestoreService {
     }
     return null; // if not found
   }
-
-  // Example: fetch classes
-  Future<List<Map<String, dynamic>>> getAllClasses() async {
-    QuerySnapshot snapshot = await _db.collection('classes').get();
-    return snapshot.docs.map((doc) => doc.data() as Map<String, dynamic>).toList();
-  }
-
-  // Example: fetch classes for a specific student
-  Future<List<Map<String, dynamic>>> getStudentClasses(String studentId) async {
-    // e.g., store an array of classIDs in the user's doc, then get them
-    // or keep it simpler with subcollections - your choice
-    // Implementation depends on your data structure
-    return [];
-  }
-
-// More methods: createClass, updateClass, deleteClass, registerStudent, etc.
 }

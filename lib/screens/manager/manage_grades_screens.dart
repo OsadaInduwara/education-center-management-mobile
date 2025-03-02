@@ -28,7 +28,7 @@ class _ManageGradesScreenState extends State<ManageGradesScreen> {
       final snapshot = await FirebaseFirestore.instance.collection('grades').get();
       final grades = snapshot.docs.map((doc) {
         return {
-          'docId': doc.id,
+          'gradeId': doc.id,
           'gradeName': doc['gradeName'],
         };
       }).toList();
@@ -54,13 +54,20 @@ class _ManageGradesScreenState extends State<ManageGradesScreen> {
     try {
       if (_selectedGradeId == null) {
         // Create new grade
-        await FirebaseFirestore.instance.collection('grades').add({'gradeName': gradeName});
+        final docRef = await FirebaseFirestore.instance
+            .collection('grades')
+            .add({'gradeName': gradeName});
+        // Optionally update the document with its own ID.
+        await docRef.update({'gradeId': docRef.id});
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text("Grade '$gradeName' created.")),
         );
       } else {
         // Update existing grade
-        await FirebaseFirestore.instance.collection('grades').doc(_selectedGradeId).update({'gradeName': gradeName});
+        await FirebaseFirestore.instance
+            .collection('grades')
+            .doc(_selectedGradeId)
+            .update({'gradeName': gradeName});
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text("Grade updated to '$gradeName'.")),
         );
@@ -77,6 +84,7 @@ class _ManageGradesScreenState extends State<ManageGradesScreen> {
       setState(() => _isLoading = false);
     }
   }
+
 
   Future<void> _deleteGrade(String gradeId) async {
     setState(() => _isLoading = true);
@@ -168,11 +176,11 @@ class _ManageGradesScreenState extends State<ManageGradesScreen> {
                         children: [
                           IconButton(
                             icon: const Icon(Icons.edit, color: Colors.blue),
-                            onPressed: () => _setGradeForEditing(grade['docId'], grade['gradeName']),
+                            onPressed: () => _setGradeForEditing(grade['gradeId'], grade['gradeName']),
                           ),
                           IconButton(
                             icon: const Icon(Icons.delete, color: Colors.red),
-                            onPressed: () => _deleteGrade(grade['docId']),
+                            onPressed: () => _deleteGrade(grade['gradeId']),
                           ),
                         ],
                       ),
