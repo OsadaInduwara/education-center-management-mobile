@@ -46,11 +46,11 @@ class ManagerControlPanel extends StatelessWidget {
                 ),
               ),
               child: const Text(
-                'Register Student',
+                'Assign Student',
                 style: TextStyle(color: AppColors.textPrimary, fontSize: 16),
               ),
               onPressed: () {
-                Navigator.pushNamed(context, '/registerStudent');
+                Navigator.pushNamed(context, '/assignStudent');
               },
             ),
             const SizedBox(height: 12),
@@ -97,11 +97,11 @@ class ManagerControlPanel extends StatelessWidget {
                 ),
               ),
               child: const Text(
-                'Register Teacher',
+                'Assign Teacher',
                 style: TextStyle(color: AppColors.textPrimary, fontSize: 16),
               ),
               onPressed: () {
-                Navigator.pushNamed(context, '/registerTeacher');
+                Navigator.pushNamed(context, '/assignTeacher');
               },
             ),
             const SizedBox(height: 12),
