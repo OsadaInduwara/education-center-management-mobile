@@ -19,6 +19,8 @@ import 'package:student_book/screens/main/profile_screen.dart';
 import 'package:student_book/screens/manager/class_management_screen.dart';
 import 'package:student_book/screens/manager/manage_grades_screens.dart';
 import 'package:student_book/providers/user_provider.dart';
+import 'package:student_book/screens/student/studentdashboard.dart';
+import 'package:student_book/screens/teacher/teacherdashboard.dart';
 import 'firebase_options.dart';
 import 'screens/auth/login_screen.dart';
 import 'package:flutter/foundation.dart'; // For kIsWeb
@@ -77,6 +79,10 @@ class MyApp extends StatelessWidget {
             return ClassDetailScreen(classData: args);
           },
           '/subscrition': (context) => SubscriptionPage(),
+          '/teacherdashboard': (context) => const TeacherDashboardScreen(),
+          '/studentdashboard': (context) => const StudentDashboardScreen(),
+
+
 
 
         },

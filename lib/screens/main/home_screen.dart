@@ -35,7 +35,7 @@ class _HomeScreenState extends State<HomeScreen> {
           preferredSize: const Size.fromHeight(150),
           child: AppBar(
             automaticallyImplyLeading: false,
-            flexibleSpace: Stack(
+            flexibleSpace: Stack(  
               children: [
                 // Background image
                 Container(
@@ -155,6 +155,43 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
           ),
+        if (role == 'student')
+          Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primary,
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              ),
+              onPressed: () {
+                Navigator.pushNamed(context, '/studentdashboard');
+              },
+              child: const Text(
+                'Student Dashboard',
+                style: TextStyle(color: Colors.white, fontSize: 16),
+              ),
+            ),
+          ),
+        if (role == 'teacher')
+          Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primary,
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              ),
+              onPressed: () {
+                Navigator.pushNamed(context, '/teacherdashboard');
+              },
+              child: const Text(
+                'Teacher Dashboard',
+                style: TextStyle(color: Colors.white, fontSize: 16),
+              ),
+            ),
+          ),
+
         const SizedBox(height: 10),
         Expanded(child: _buildGradeList()),
       ],
