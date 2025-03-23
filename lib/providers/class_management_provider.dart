@@ -2,16 +2,16 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import '../models/class_model.dart';
 import '../models/grade_model.dart';
-import '../models/teacher_model.dart';
-import '../models/student_model.dart';
+import '../models/user_model.dart';
 
 class ClassManagementProvider extends ChangeNotifier {
   final FirebaseFirestore _db = FirebaseFirestore.instance;
 
   bool isLoading = false;
   List<ClassModel> classes = [];
-  List<StudentModel> students = [];
-  List<TeacherModel> teachers = [];
+  List<UserModel> teachers = [];
+  List<UserModel> students = [];
+
   List<GradeModel> grades = [];
 
   /// Fetch all initial data.
@@ -19,25 +19,20 @@ class ClassManagementProvider extends ChangeNotifier {
     isLoading = true;
     notifyListeners();
     try {
-      // Fetch classes.
-      final classSnap = await _db.collection('classes').get();
-      classes = classSnap.docs.map((doc) => ClassModel.fromFirestore(doc)).toList();
-
-      // Fetch students (role = student).
-      final studentSnap = await _db.collection('users').where('role', isEqualTo: 'student').get();
-      students = studentSnap.docs
-          .map((doc) => StudentModel.fromMap(doc.data(), doc.id))
-          .toList();
-
-      // Fetch teachers (role = teacher).
-      final teacherSnap = await _db.collection('users').where('role', isEqualTo: 'teacher').get();
-      teachers = teacherSnap.docs
-          .map((doc) => TeacherModel.fromMap(doc.data(), doc.id))
-          .toList();
-
-      // Fetch grades.
-      final gradeSnap = await _db.collection('grades').get();
-      grades = gradeSnap.docs.map((doc) => GradeModel.fromFirestore(doc)).toList();
+      await Future.wait([
+        _db.collection('classes').get().then((snap) {
+          classes = snap.docs.map((doc) => ClassModel.fromFirestore(doc)).toList();
+        }),
+        _db.collection('users').where('role', isEqualTo: 'student').get().then((snap) {
+          students = snap.docs.map((doc) => UserModel.fromMap(doc.data(), doc.id)).toList();
+        }),
+        _db.collection('users').where('role', isEqualTo: 'teacher').get().then((snap) {
+          teachers = snap.docs.map((doc) => UserModel.fromMap(doc.data(), doc.id)).toList();
+        }),
+        _db.collection('grades').get().then((snap) {
+          grades = snap.docs.map((doc) => GradeModel.fromFirestore(doc)).toList();
+        }),
+      ]);
     } catch (e) {
       debugPrint("Error fetching initial data: $e");
       rethrow;
@@ -63,8 +58,6 @@ class ClassManagementProvider extends ChangeNotifier {
         'createdAt': FieldValue.serverTimestamp(),
       });
       await docRef.update({'classId': docRef.id});
-      // Refresh data after creation.
-      await fetchInitialData();
     } catch (e) {
       debugPrint("Error creating class: $e");
       rethrow;
@@ -87,8 +80,8 @@ class ClassManagementProvider extends ChangeNotifier {
         'email': studentEmail,
         'classIds': FieldValue.arrayUnion([classId]),
         'gradeId': gradeId,
+        'userId': studentId, // Include userId here
       }, SetOptions(merge: true));
-      await enrolDoc.update({'userId': enrolDoc.id});
     } catch (e) {
       debugPrint("Error assigning student: $e");
       rethrow;

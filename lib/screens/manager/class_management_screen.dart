@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:student_book/models/user_model.dart';
 import '../../models/class_model.dart';
 import '../../models/grade_model.dart';
-import '../../models/teacher_model.dart';
-import '../../models/student_model.dart';
 import '../../providers/class_management_provider.dart';
+import '../../utils/snackbar_utils.dart';
 
 class ClassManagementScreen extends StatefulWidget {
   const ClassManagementScreen({super.key});
@@ -17,18 +17,24 @@ class _ClassManagementScreenState extends State<ClassManagementScreen> {
   final _formKey = GlobalKey<FormState>();
   final _classNameController = TextEditingController();
 
-  // Selected IDs for creation/assignment.
-  String? _selectedGradeId;
+  // Separate state variables for each section
+  String? _selectedGradeIdForCreate;
   String? _selectedTeacherId;
+  String? _selectedGradeIdForAssign;
   String? _selectedClassId;
   String? _selectedStudentId;
+
+  // Flags for operation-specific loading states
+  bool _isCreatingClass = false;
+  bool _isAssigningStudent = false;
+  bool _isUnassigningStudent = false;
 
   @override
   void initState() {
     super.initState();
-    // Trigger the initial data load.
-    Provider.of<ClassManagementProvider>(context, listen: false)
-        .fetchInitialData();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      Provider.of<ClassManagementProvider>(context, listen: false).fetchInitialData();
+    });
   }
 
   @override
@@ -49,13 +55,17 @@ class _ClassManagementScreenState extends State<ClassManagementScreen> {
         return Scaffold(
           appBar: AppBar(
             title: const Text('Class Management'),
+            backgroundColor: Colors.blueAccent,
+            centerTitle: true,
           ),
           body: SingleChildScrollView(
             padding: const EdgeInsets.all(16),
             child: Column(
               children: [
+                _buildSectionHeader('Create a Class'),
                 _buildCreateClassSection(provider),
-                const Divider(height: 30),
+                const SizedBox(height: 30),
+                _buildSectionHeader('Assign/Unassign Students'),
                 _buildAssignSection(provider),
               ],
             ),
@@ -65,171 +75,279 @@ class _ClassManagementScreenState extends State<ClassManagementScreen> {
     );
   }
 
+  Widget _buildSectionHeader(String title) {
+    return Container(
+      alignment: Alignment.centerLeft,
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: Text(
+        title,
+        style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.blueAccent),
+      ),
+    );
+  }
+
   Widget _buildCreateClassSection(ClassManagementProvider provider) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Form(
-          key: _formKey,
-          child: TextFormField(
-            controller: _classNameController,
-            decoration: const InputDecoration(labelText: 'Class Name'),
-            validator: (val) =>
-            val == null || val.isEmpty ? 'Enter class name' : null,
-          ),
+    return Card(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+      elevation: 4,
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          children: [
+            Form(
+              key: _formKey,
+              child: TextFormField(
+                controller: _classNameController,
+                decoration: const InputDecoration(
+                  labelText: 'Class Name',
+                  border: OutlineInputBorder(),
+                ),
+                validator: (val) => val == null || val.isEmpty ? 'Enter class name' : null,
+              ),
+            ),
+            const SizedBox(height: 12),
+            _buildDropdown(
+              value: _selectedGradeIdForCreate,
+              hint: 'Select a Grade',
+              items: provider.grades.isNotEmpty
+                  ? provider.grades.map((GradeModel grade) {
+                return DropdownMenuItem(value: grade.id, child: Text(grade.gradeName));
+              }).toList()
+                  : [],
+              onChanged: (val) {
+                setState(() => _selectedGradeIdForCreate = val);
+              },
+            ),
+            const SizedBox(height: 12),
+            _buildDropdown(
+              value: _selectedTeacherId,
+              hint: 'Select a Teacher',
+              items: provider.teachers.isNotEmpty
+                  ? provider.teachers.map((UserModel teacher) {
+                return DropdownMenuItem(value: teacher.id, child: Text('${teacher.name} (${teacher.email})'));
+              }).toList()
+                  : [],
+              onChanged: (val) {
+                setState(() => _selectedTeacherId = val);
+              },
+            ),
+            const SizedBox(height: 12),
+            ElevatedButton(
+              onPressed: _isCreatingClass
+                  ? null
+                  : () async {
+                if (_formKey.currentState!.validate() &&
+                    _selectedGradeIdForCreate != null &&
+                    _selectedTeacherId != null) {
+                  try {
+                    setState(() => _isCreatingClass = true);
+                    await provider.createClass(
+                      className: _classNameController.text.trim(),
+                      teacherId: _selectedTeacherId!,
+                      gradeId: _selectedGradeIdForCreate!,
+                    );
+                    SnackbarUtils.showAutoDismissBanner(context, "Class created successfully", type: SnackbarType.success);
+
+                    setState(() {
+                      _selectedGradeIdForCreate = null;
+                      _selectedTeacherId = null;
+                    });
+                    _classNameController.clear();
+                  } catch (e) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('Error: $e')),
+                    );
+                  } finally {
+                    setState(() => _isCreatingClass = false);
+                  }
+                } else {
+                  SnackbarUtils.showAutoDismissBanner(context, "Please complete all fields", type: SnackbarType.error);
+
+                }
+              },
+              child: _isCreatingClass
+                  ? const CircularProgressIndicator(color: Colors.white)
+                  : const Text('Create Class'),
+            ),
+          ],
         ),
-        const SizedBox(height: 8),
-        // Grade Selection.
-        DropdownButtonFormField<String>(
-          value: _selectedGradeId,
-          hint: const Text('Select a Grade'),
-          items: provider.grades.map((GradeModel grade) {
-            return DropdownMenuItem(
-              value: grade.id,
-              child: Text(grade.gradeName),
-            );
-          }).toList(),
-          onChanged: (val) {
-            setState(() {
-              _selectedGradeId = val;
-              _selectedClassId = null; // Reset class if grade changes.
-            });
-          },
-          validator: (val) => val == null ? 'Please select a grade' : null,
-        ),
-        const SizedBox(height: 10),
-        // Teacher Selection.
-        DropdownButtonFormField<String>(
-          value: _selectedTeacherId,
-          hint: const Text('Select a Teacher'),
-          items: provider.teachers.map((TeacherModel teacher) {
-            return DropdownMenuItem(
-              value: teacher.uid,
-              child: Text('${teacher.name} (${teacher.email})'),
-            );
-          }).toList(),
-          onChanged: (val) {
-            setState(() => _selectedTeacherId = val);
-          },
-          validator: (val) => val == null ? 'Please select a teacher' : null,
-        ),
-        const SizedBox(height: 8),
-        ElevatedButton(
-          onPressed: () async {
-            if (_formKey.currentState!.validate() &&
-                _selectedGradeId != null &&
-                _selectedTeacherId != null) {
-              await Provider.of<ClassManagementProvider>(context, listen: false)
-                  .createClass(
-                className: _classNameController.text.trim(),
-                teacherId: _selectedTeacherId!,
-                gradeId: _selectedGradeId!,
-              );
-              _classNameController.clear();
-            }
-          },
-          child: const Text('Create Class'),
-        ),
-      ],
+      ),
     );
   }
 
   Widget _buildAssignSection(ClassManagementProvider provider) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text(
-          'Assign/Unassign Student to Classes',
-          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-        ),
-        const SizedBox(height: 8),
-        // Grade Dropdown for filtering classes.
-        DropdownButtonFormField<String>(
-          value: _selectedGradeId,
-          hint: const Text('Select Grade for Assignment'),
-          items: provider.grades.map((GradeModel grade) {
-            return DropdownMenuItem(
-              value: grade.id,
-              child: Text(grade.gradeName),
-            );
-          }).toList(),
-          onChanged: (val) {
-            setState(() {
-              _selectedGradeId = val;
-              _selectedClassId = null;
-            });
-          },
-          validator: (val) => val == null ? 'Please select a grade' : null,
-        ),
-        const SizedBox(height: 8),
-        // Class Dropdown filtered by selected grade.
-        DropdownButtonFormField<String>(
-          value: _selectedClassId,
-          hint: const Text('Select a Class'),
-          items: provider.classes
-              .where((ClassModel c) => c.gradeId == _selectedGradeId)
-              .map((ClassModel c) {
-            return DropdownMenuItem(
-              value: c.id,
-              child: Text(c.className),
-            );
-          }).toList(),
-          onChanged: (val) {
-            setState(() => _selectedClassId = val);
-          },
-          validator: (val) => val == null ? 'Please select a class' : null,
-        ),
-        const SizedBox(height: 8),
-        // Student Dropdown.
-        DropdownButtonFormField<String>(
-          value: _selectedStudentId,
-          hint: const Text('Select a Student'),
-          items: provider.students.map((StudentModel s) {
-            return DropdownMenuItem(
-              value: s.uid,
-              child: Text('${s.name} (${s.email})'),
-            );
-          }).toList(),
-          onChanged: (val) {
-            setState(() => _selectedStudentId = val);
-          },
-        ),
-        const SizedBox(height: 16),
-        // Buttons for assigning and unassigning.
-        Row(
+    return Card(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+      elevation: 4,
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
           children: [
-            ElevatedButton(
-              onPressed: () async {
-                if (_selectedClassId != null &&
-                    _selectedStudentId != null &&
-                    _selectedGradeId != null) {
-                  await provider.assignStudentToClass(
-                    studentId: _selectedStudentId!,
-                    classId: _selectedClassId!,
-                    gradeId: _selectedGradeId!,
-                    studentEmail: provider.students
-                        .firstWhere((s) => s.uid == _selectedStudentId)
-                        .email,
-                  );
-                }
+            _buildDropdown(
+              value: _selectedGradeIdForAssign,
+              hint: 'Select Grade for Assignment',
+              items: provider.grades.isNotEmpty
+                  ? provider.grades.map((GradeModel grade) {
+                return DropdownMenuItem(value: grade.id, child: Text(grade.gradeName));
+              }).toList()
+                  : [],
+              onChanged: (val) {
+                setState(() {
+                  _selectedGradeIdForAssign = val;
+                  _selectedClassId = null; // Reset class selection when grade changes
+                });
               },
-              child: const Text('Assign'),
             ),
-            const SizedBox(width: 16),
-            ElevatedButton(
-              onPressed: () async {
-                if (_selectedClassId != null && _selectedStudentId != null) {
-                  await provider.unassignStudentFromClass(
-                    studentId: _selectedStudentId!,
-                    classId: _selectedClassId!,
-                  );
-                }
+            const SizedBox(height: 12),
+            _buildDropdown(
+              value: _selectedClassId,
+              hint: 'Select a Class',
+              items: _selectedGradeIdForAssign != null && provider.classes.any((c) => c.gradeId == _selectedGradeIdForAssign)
+                  ? provider.classes
+                  .where((ClassModel c) => c.gradeId == _selectedGradeIdForAssign)
+                  .map((ClassModel c) {
+                return DropdownMenuItem(value: c.id, child: Text(c.className));
+              }).toList()
+                  : [],
+              onChanged: (val) {
+                setState(() => _selectedClassId = val);
               },
-              child: const Text('Unassign'),
+            ),
+            const SizedBox(height: 12),
+            _buildDropdown(
+              value: _selectedStudentId,
+              hint: 'Select a Student',
+              items: provider.students.isNotEmpty
+                  ? provider.students.map((UserModel student) {
+                return DropdownMenuItem(value: student.id, child: Text('${student.email}'));
+              }).toList()
+                  : [],
+              onChanged: (val) {
+                setState(() => _selectedStudentId = val);
+              },
+            ),
+            const SizedBox(height: 16),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Expanded(
+                  child: ElevatedButton(
+                    onPressed: _isAssigningStudent
+                        ? null
+                        : () async {
+                      if (_selectedClassId != null &&
+                          _selectedStudentId != null &&
+                          _selectedGradeIdForAssign != null) {
+                        try {
+                          setState(() => _isAssigningStudent = true);
+                          await provider.assignStudentToClass(
+                            studentId: _selectedStudentId!,
+                            classId: _selectedClassId!,
+                            gradeId: _selectedGradeIdForAssign!,
+                            studentEmail: provider.students
+                                .firstWhere((student) => student.id == _selectedStudentId)
+                                .email,
+                          );
+                          SnackbarUtils.showAutoDismissBanner(context, "Student assigned successfully", type: SnackbarType.success);
+
+                        } catch (e) {
+
+                          SnackbarUtils.showAutoDismissBanner(context, "Error: $e", type: SnackbarType.error);
+
+                        } finally {
+                          setState(() => _isAssigningStudent = false);
+                        }
+                      } else {
+                        SnackbarUtils.showAutoDismissBanner(context, "Please select grade, class, and student", type: SnackbarType.warning);
+
+                      }
+                    },
+                    style: ElevatedButton.styleFrom(backgroundColor: Colors.green),
+                    child: _isAssigningStudent
+                        ? const CircularProgressIndicator(color: Colors.white)
+                        : const Text('Assign'),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: ElevatedButton(
+                    onPressed: _isUnassigningStudent
+                        ? null
+                        : () async {
+                      if (_selectedClassId != null && _selectedStudentId != null) {
+                        try {
+                          setState(() => _isUnassigningStudent = true);
+                          await provider.unassignStudentFromClass(
+                            studentId: _selectedStudentId!,
+                            classId: _selectedClassId!,
+                          );
+                          SnackbarUtils.showAutoDismissBanner(context, "Student unassigned successfully", type: SnackbarType.success);
+
+                        } catch (e) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text('Error: $e')),
+                          );
+                        } finally {
+                          setState(() => _isUnassigningStudent = false);
+                        }
+                      } else {
+                        SnackbarUtils.showAutoDismissBanner(context, "Please select class and student", type: SnackbarType.warning);
+
+
+                      }
+                    },
+                    style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent),
+                    child: _isUnassigningStudent
+                        ? const CircularProgressIndicator(color: Colors.white)
+                        : const Text('Unassign'),
+                  ),
+                ),
+              ],
             ),
           ],
         ),
-      ],
+      ),
+    );
+  }
+
+  Widget _buildDropdown({
+    required String? value,
+    required String hint,
+    required List<DropdownMenuItem<String>> items,
+    required ValueChanged<String?> onChanged,
+  }) {
+    return DropdownButtonFormField<String>(
+      value: value,
+      hint: Text(
+        items.isEmpty ? 'Not available' : hint,
+        style: TextStyle(color: Colors.grey.shade600, fontSize: 16),
+      ),
+      items: items,
+      onChanged: items.isEmpty ? null : onChanged,
+      style: const TextStyle(color: Colors.black87, fontSize: 16),
+      icon: const Icon(Icons.arrow_drop_down_rounded, color: Colors.grey, size: 28),
+      isExpanded: true,
+      dropdownColor: Colors.white,
+      elevation: 4,
+      decoration: InputDecoration(
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: Colors.grey.shade400, width: 1),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: Colors.grey.shade400, width: 1),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: Colors.blue, width: 2),
+        ),
+        filled: true,
+        fillColor: Colors.grey.shade50,
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      ),
+      validator: (val) => val == null ? 'Please select an option' : null,
+      menuMaxHeight: 300,
     );
   }
 }

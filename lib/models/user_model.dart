@@ -1,4 +1,5 @@
 // lib/models/user_model.dart
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class UserModel {
   final String id;
@@ -26,25 +27,35 @@ class UserModel {
       'id': id,
       'name': name,
       'email': email,
-      'mobile': mobile, // initially empty string if not provided
-      'age': age,       // initially empty string if not provided
-      'photoUrl': photoUrl, // might be empty if not provided
+      'mobile': mobile,
+      'age': age,
+      'photoUrl': photoUrl,
       'role': role,
-      'createdAt': createdAt.toIso8601String(), // or use FieldValue.serverTimestamp() on server-side
+      // Here you can either store a string or let the server set the timestamp:
+      'createdAt': createdAt.toIso8601String(),
     };
   }
 
-  // Optionally, add a fromMap if you need to read data back.
-  factory UserModel.fromMap(Map<String, dynamic> map) {
+  factory UserModel.fromMap(Map<String, dynamic> map, String id) {
+    DateTime createdAt;
+    // Check if createdAt is stored as a Timestamp or a String.
+    if (map['createdAt'] is Timestamp) {
+      createdAt = (map['createdAt'] as Timestamp).toDate();
+    } else if (map['createdAt'] is String) {
+      createdAt = DateTime.parse(map['createdAt']);
+    } else {
+      createdAt = DateTime.now();
+    }
+
     return UserModel(
-      id: map['id'] ?? '',
+      id: id,
       name: map['name'] ?? '',
       email: map['email'] ?? '',
       mobile: map['mobile'] ?? '',
       age: map['age'] ?? '',
       photoUrl: map['photoUrl'] ?? '',
       role: map['role'] ?? '',
-      createdAt: DateTime.parse(map['createdAt'] ?? DateTime.now().toIso8601String()),
+      createdAt: createdAt,
     );
   }
 }
